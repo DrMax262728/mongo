@@ -1,19 +1,16 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const MongoClient = require('mongodb').MongoClient;
+const cors = require('cors');
+const db = require('./db');
 
 const app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cors());
 
 // mongo
 const mongoUrl = "mongodb://localhost:27017";
-const dbName = "mongo-express-test";
-const client = new MongoClient(mongoUrl, { useUnifiedTopology: true });
-let db;
-
-// db.collection('users').insertOne({name: "Max", age: 23});
 
 // routes
 app.get('/', (req, res) => {
@@ -21,7 +18,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/users', (req, res) => {
-  db.collection('users').find({}).toArray( (err, docs) => {
+  db.get().collection('users').find({}).toArray( (err, docs) => {
     if (err) {
       console.log(err);
       return res.sendStatus(500)
@@ -38,7 +35,7 @@ app.post('/users', async (req, res) => {
     age: req.body.age
   };
 
-   await db.collection('users').insertOne(user, (err) => {
+   await db.get().collection('users').insertOne(user, (err) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
@@ -51,7 +48,7 @@ app.post('/users', async (req, res) => {
 app.get('/user/:name', (req, res) => {
   const paramsName = req.params.name;
 
-  db.collection('users').find({name: paramsName}).toArray( (err, docs) => {
+  db.get().collection('users').find({name: paramsName}).toArray( (err, docs) => {
     if (err) {
       console.log(err);
       return res.sendStatus(500);
@@ -67,7 +64,7 @@ app.put('/user/:name', (req, res) => {
     name: req.body.name
   };
 
-  db.collection('users').updateOne({name: paramsName}, {$set: bodyName}, (err) => {
+  db.get().collection('users').updateOne({name: paramsName}, {$set: bodyName}, (err) => {
     if (err) {
       console.log(err);
       res.sendStatus(500);
@@ -80,7 +77,7 @@ app.put('/user/:name', (req, res) => {
 app.delete('/user/:name', (req, res) => {
   const paramsName = req.params.name;
 
-  db.collection('users').removeOne({name: paramsName}, (err) => {
+  db.get().collection('users').removeOne({name: paramsName}, (err) => {
     if(err) {
       console.log(err);
       return res.sendStatus(500);
@@ -90,8 +87,10 @@ app.delete('/user/:name', (req, res) => {
   })
 });
 
+console.log('db: ', db);
+
 // connect to server
-client.connect( (err) => {
+  db.connect( mongoUrl,(err) => {
   if (err) {
     return console.log(err)
   }
@@ -99,7 +98,5 @@ client.connect( (err) => {
   app.listen(3737, () => {
     console.log('Server started!')
   });
-
-  db = client.db(dbName);
 
 });
